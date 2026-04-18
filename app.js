@@ -125,6 +125,7 @@ function runCalc(){
         let segType = null;
         let segStart = dist[1];
         let segPowerSum = 0, segGradSum = 0, segCount = 0, segTimeSum = 0;
+        let pendingType = null, pendingDist = 0;
 
         for(let i=1;i<elev.length;i++){
             let d=(dist[i]-dist[i-1])*1000;
@@ -147,20 +148,40 @@ function runCalc(){
             if(segType === null) segType = type;
 
             if(type !== segType){
-                segments.push({
-                    startKm:  segStart,
-                    endKm:    dist[i],
-                    type:     segType,
-                    avgGrad:  segGradSum / segCount,
-                    avgPower: segPowerSum / segCount,
-                    timeSec:  segTimeSum
-                });
-                segStart    = dist[i];
-                segType     = type;
-                segPowerSum = 0;
-                segGradSum  = 0;
-                segCount    = 0;
-                segTimeSum  = 0;
+                // only switch terrain type if the new type persists for 0.5km
+                // we do this by checking if pending type has accumulated enough distance
+                if(!pendingType){
+                    pendingType = type;
+                    pendingDist = d / 1000;
+                } else if(pendingType === type){
+                    pendingDist += d / 1000;
+                    if(pendingDist >= 0.5){
+                        // commit the previous segment
+                        segments.push({
+                            startKm:  segStart,
+                            endKm:    dist[i],
+                            type:     segType,
+                            avgGrad:  segGradSum / segCount,
+                            avgPower: segPowerSum / segCount,
+                            timeSec:  segTimeSum
+                        });
+                        segStart    = dist[i];
+                        segType     = pendingType;
+                        segPowerSum = 0;
+                        segGradSum  = 0;
+                        segCount    = 0;
+                        segTimeSum  = 0;
+                        pendingType = null;
+                        pendingDist = 0;
+                    }
+                } else {
+                    // different pending type — reset pending
+                    pendingType = type;
+                    pendingDist = d / 1000;
+                }
+            } else {
+                pendingType = null;
+                pendingDist = 0;
             }
             segPowerSum += power;
             segGradSum  += gradPct;
@@ -202,7 +223,8 @@ function runCalc(){
             let seg = segments[s];
             let c = terrainColor(seg.type);
             let emoji = terrainEmoji(seg.type);
-            let mins = Math.round(seg.timeSec / 60);
+            let mins = Math.floor(seg.timeSec / 60);
+            let secs = Math.round(seg.timeSec % 60);
 
             while(carbIndex < carbReminders.length && carbReminders[carbIndex].km <= seg.endKm){
                 let r = carbReminders[carbIndex];
@@ -219,7 +241,7 @@ function runCalc(){
                 <span style="color:#6b7280;font-size:13px;display:block;margin-top:4px">
                     Avg grade: <strong style="color:#111">${seg.avgGrad.toFixed(1)}%</strong>
                     &nbsp;|&nbsp; Avg power: <strong style="color:#111">${Math.round(seg.avgPower)}W</strong>
-                    &nbsp;|&nbsp; Est. time: <strong style="color:#111">${mins} min</strong>
+                    &nbsp;|&nbsp; Est. time: <strong style="color:#111">${mins}m ${secs}s</strong>
                 </span>
             </div>`;
         }
