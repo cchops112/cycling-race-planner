@@ -3,65 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <title>Race Calc Pro</title>
-
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 </head>
-
 <body>
-
 <div class="container">
 <h1>Race Calc Pro</h1>
-
 <div class="top">
-
 <div class="card">
-
 <label>FTP (Watts)</label>
 <input type="number" id="ftp">
-
 <div class="collapsible">What is FTP? ⬇</div>
 <div class="content">
 <p>FTP = max 1-hour power. Use ~95% of 20-min effort.</p>
 </div>
-
 <label>Target IF</label>
 <input type="number" id="targetIF" value="0.85" step="0.01">
-
 <div class="collapsible">What is IF? ⬇</div>
 <div class="content">
 <p>IF = effort vs FTP. 0.85 = 85% FTP.</p>
 </div>
-
 <label>Crr</label>
 <input type="number" id="crr" value="0.005" step="0.001">
-
 <div class="collapsible">What is Crr? ⬇</div>
 <div class="content">
 <p>Rolling resistance. Gravel ≈ 0.008–0.01</p>
 </div>
-
 <label>Upload GPX</label>
 <input type="file" id="gpxFile">
-
 <button onclick="runCalc()">Generate Plan</button>
-
 </div>
-
 <div class="card">
 <canvas id="chart"></canvas>
 </div>
-
 </div>
-
 <div class="card">
 <h3>Segments</h3>
 <div id="segments"></div>
 </div>
-
 </div>
-
 <script src="app.js"></script>
 </body>
 </html>

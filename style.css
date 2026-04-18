@@ -3,37 +3,31 @@ body {
     background:#f4f6f8;
     margin:0;
 }
-
 .container {
     max-width:1000px;
     margin:auto;
     padding:20px;
 }
-
 .top {
     display:grid;
     grid-template-columns:1fr 2fr;
     gap:20px;
 }
-
 .card {
     background:white;
     padding:15px;
     border-radius:10px;
 }
-
 label {
     display:block;
     margin-top:10px;
     font-weight:bold;
 }
-
 input {
     width:100%;
     padding:6px;
     margin-top:4px;
 }
-
 button {
     margin-top:10px;
     padding:10px;
@@ -44,7 +38,6 @@ button {
     border-radius:6px;
     cursor:pointer;
 }
-
 .collapsible {
     background:#eef6ff;
     padding:6px;
@@ -53,14 +46,12 @@ button {
     border-radius:6px;
     font-size:13px;
 }
-
 .content {
     max-height:0;
     overflow:hidden;
     transition:0.3s;
     font-size:13px;
 }
-
 .segment {
     padding:5px;
     border-bottom:1px solid #ddd;
