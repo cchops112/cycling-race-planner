@@ -19,11 +19,19 @@ function haversine(lat1, lon1, lat2, lon2) {
     return 2*R*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function optimizePower(grad, ftp, IF){
+function optimizePower(grad, ftp, IF, windSpeed, windDir){
     let base = ftp*IF;
     let adj = grad>0.06?0.15:grad>0.03?0.1:grad>-0.02?0:grad>-0.05?-0.15:-0.25;
     let p = base*(1+adj);
-    return Math.max(ftp*0.5, Math.min(ftp*1.05, p));
+
+    // wind adjustment: headwind adds ~5W per 10km/h, tailwind reduces, crosswind small penalty
+    let windWatts = 0;
+    if(windDir === "headwind")  windWatts =  (windSpeed / 10) * 5;
+    if(windDir === "tailwind")  windWatts = -(windSpeed / 10) * 4;
+    if(windDir === "crosswind") windWatts =  (windSpeed / 10) * 2;
+    p += windWatts;
+
+    return Math.max(ftp*0.5, Math.min(ftp*1.1, p));
 }
 
 function getTerrainType(gradPct){
@@ -54,11 +62,67 @@ function terrainEmoji(type){
     }[type] || "";
 }
 
-let chart;
+async function fetchWind(){
+    let file = document.getElementById("gpxFile").files[0];
+    let status = document.getElementById("windStatus");
+    if(!file){
+        status.textContent = "⚠️ Upload a GPX file first so we can read your race location.";
+        status.style.color = "#f97316";
+        return;
+    }
+    status.textContent = "📡 Fetching wind data...";
+    status.style.color = "#6b7280";
+
+    // read GPX to get start coordinates
+    let text = await file.text();
+    let xml = new DOMParser().parseFromString(text, "text/xml");
+    let pts = xml.getElementsByTagName("trkpt");
+    if(!pts.length){
+        status.textContent = "⚠️ Could not read coordinates from GPX file.";
+        status.style.color = "#f97316";
+        return;
+    }
+    let lat = +pts[0].getAttribute("lat");
+    let lon = +pts[0].getAttribute("lon");
+
+    try {
+        let url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`;
+        let res = await fetch(url);
+        let data = await res.json();
+        let speed = Math.round(data.current.wind_speed_10m);
+        let degrees = data.current.wind_direction_10m;
+
+        // set wind speed
+        document.getElementById("windSpeed").value = speed;
+
+        // convert degrees to headwind/tailwind/crosswind
+        // we treat 0/360 = northerly, and make a simple call based on compass
+        // since we don't know exact race heading, we describe the compass direction
+        // and let user adjust if needed
+        let compassDir = degreesToCompass(degrees);
+
+        status.innerHTML = `✅ Wind at race start: <strong>${speed} km/h</strong> from the <strong>${compassDir}</strong> (${degrees}°)<br>
+        <span style="font-size:11px;color:#9ca3af">Select headwind/tailwind/crosswind based on your race direction.</span>`;
+        status.style.color = "#16a34a";
+
+    } catch(err) {
+        status.textContent = "⚠️ Could not fetch wind data. Check your connection and try again.";
+        status.style.color = "#dc2626";
+    }
+}
+
+function degreesToCompass(deg){
+    let dirs = ["North","NE","East","SE","South","SW","West","NW"];
+    return dirs[Math.round(deg / 45) % 8];
+}
+
+
 function runCalc(){
     let ftp = +document.getElementById("ftp").value;
     let IF  = +document.getElementById("targetIF").value;
     let crr = +document.getElementById("crr").value;
+    let windSpeed = +document.getElementById("windSpeed").value || 0;
+    let windDir   = document.getElementById("windDir").value;
     let file = document.getElementById("gpxFile").files[0];
 
     // parse previous year data if entered
@@ -132,7 +196,7 @@ function runCalc(){
             if(d===0){ colors.push("gray"); continue; }
             let grad=(elev[i]-elev[i-1])/d;
             let gradPct = grad*100;
-            let power = optimizePower(grad, ftp, IF);
+            let power = optimizePower(grad, ftp, IF, windSpeed, windDir);
             let type = getTerrainType(gradPct);
             colors.push(terrainColor(type));
 
@@ -197,6 +261,20 @@ function runCalc(){
                 avgPower: segPowerSum / segCount,
                 timeSec:  segTimeSum
             });
+        }
+
+        // render wind banner if wind was entered
+        let windBanner = "";
+        if(windSpeed > 0){
+            let windEmoji = windDir === "tailwind" ? "🟢" : windDir === "headwind" ? "🔴" : "🟡";
+            let windImpact = windDir === "headwind" ? `+${((windSpeed/10)*5).toFixed(0)}W added to effort` :
+                             windDir === "tailwind" ? `-${((windSpeed/10)*4).toFixed(0)}W reduced effort` :
+                             `+${((windSpeed/10)*2).toFixed(0)}W slight penalty`;
+            windBanner = `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:14px;color:#166534">
+                <strong>💨 Wind Sock</strong>
+                &nbsp;|&nbsp; ${windSpeed} km/h ${windDir}
+                &nbsp;|&nbsp; ${windEmoji} ${windImpact}
+            </div>`;
         }
 
         // render previous year summary if data was entered
@@ -285,7 +363,7 @@ function runCalc(){
             ${comparisonStr ? `<div style="margin-top:8px;font-size:14px">${comparisonStr}</div>` : ""}
         </div>`;
 
-        document.getElementById("segments").innerHTML = prevBanner + html + finishBanner;
+        document.getElementById("segments").innerHTML = windBanner + prevBanner + html + finishBanner;
 
         if(chart) chart.destroy();
         chart = new Chart(document.getElementById("chart"),{
