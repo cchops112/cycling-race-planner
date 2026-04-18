@@ -87,12 +87,25 @@ function runCalc(){
             elev.push(eleTag ? +eleTag.textContent : elev[elev.length-1]);
         }
 
+        // estimate speed from power and gradient
+        function estimateSpeed(power, grad){
+            let baseSpeed = 8;
+            let gradPenalty = Math.max(0.3, 1 - grad * 8);
+            let powerBoost = power / (ftp * IF);
+            return baseSpeed * gradPenalty * powerBoost;
+        }
+
+        // track hourly carb reminders
+        let totalTimeSec = 0;
+        let nextCarbHour = 3600;
+        let carbReminders = [];
+
         // build per-point colors and terrain-based segments
         let colors = [];
         let segments = [];
         let segType = null;
         let segStart = dist[1];
-        let segPowerSum = 0, segGradSum = 0, segCount = 0;
+        let segPowerSum = 0, segGradSum = 0, segCount = 0, segTimeSum = 0;
 
         for(let i=1;i<elev.length;i++){
             let d=(dist[i]-dist[i-1])*1000;
@@ -103,6 +116,15 @@ function runCalc(){
             let type = getTerrainType(gradPct);
             colors.push(terrainColor(type));
 
+            let speed = estimateSpeed(power, grad);
+            let timeSec = d / speed;
+            totalTimeSec += timeSec;
+
+            if(totalTimeSec >= nextCarbHour){
+                carbReminders.push({ km: dist[i], hour: Math.round(nextCarbHour/3600) });
+                nextCarbHour += 3600;
+            }
+
             if(segType === null) segType = type;
 
             if(type !== segType){
@@ -111,16 +133,19 @@ function runCalc(){
                     endKm:    dist[i],
                     type:     segType,
                     avgGrad:  segGradSum / segCount,
-                    avgPower: segPowerSum / segCount
+                    avgPower: segPowerSum / segCount,
+                    timeSec:  segTimeSum
                 });
                 segStart    = dist[i];
                 segType     = type;
                 segPowerSum = 0;
                 segGradSum  = 0;
                 segCount    = 0;
+                segTimeSum  = 0;
             }
             segPowerSum += power;
             segGradSum  += gradPct;
+            segTimeSum  += timeSec;
             segCount++;
         }
         if(segCount > 0){
@@ -129,24 +154,39 @@ function runCalc(){
                 endKm:    dist[dist.length-1],
                 type:     segType,
                 avgGrad:  segGradSum / segCount,
-                avgPower: segPowerSum / segCount
+                avgPower: segPowerSum / segCount,
+                timeSec:  segTimeSum
             });
         }
 
-        // render segments
-        let html = segments.map(seg => {
+        // render segments with carb reminders inserted at the right km
+        let carbIndex = 0;
+        let html = "";
+        for(let s=0; s<segments.length; s++){
+            let seg = segments[s];
             let c = terrainColor(seg.type);
             let emoji = terrainEmoji(seg.type);
-            return `<div class="segment" style="border-left:4px solid ${c};padding-left:10px;margin:4px 0">
-                <strong style="color:${c}">${emoji} ${seg.type.toUpperCase()}</strong>
-                &nbsp;|&nbsp;
-                ${seg.startKm.toFixed(1)} – ${seg.endKm.toFixed(1)} km
-                &nbsp;|&nbsp;
-                avg grade: ${seg.avgGrad.toFixed(1)}%
-                &nbsp;|&nbsp;
-                avg power: ${Math.round(seg.avgPower)}W
+            let mins = Math.round(seg.timeSec / 60);
+
+            while(carbIndex < carbReminders.length && carbReminders[carbIndex].km <= seg.endKm){
+                let r = carbReminders[carbIndex];
+                html += `<div style="background:#fff7ed;border:2px solid #f97316;border-radius:8px;padding:10px 14px;margin:8px 0;font-size:15px;font-weight:bold;color:#c2410c;">
+                    🍌 CARB REMINDER — Hour ${r.hour} (~${r.km.toFixed(1)} km)
+                    <span style="font-weight:normal;font-size:13px;display:block;margin-top:2px;color:#9a3412">Eat 50–60g of carbs now (gel, bar, chews, or banana)</span>
+                </div>`;
+                carbIndex++;
+            }
+
+            html += `<div style="border-left:5px solid ${c};padding:10px 14px;margin:6px 0;border-radius:0 8px 8px 0;background:#f9fafb;font-size:15px;">
+                <strong style="color:${c};font-size:16px">${emoji} ${seg.type.toUpperCase()}</strong>
+                <span style="color:#374151;margin-left:8px">${seg.startKm.toFixed(1)} – ${seg.endKm.toFixed(1)} km</span>
+                <span style="color:#6b7280;font-size:13px;display:block;margin-top:4px">
+                    Avg grade: <strong style="color:#111">${seg.avgGrad.toFixed(1)}%</strong>
+                    &nbsp;|&nbsp; Avg power: <strong style="color:#111">${Math.round(seg.avgPower)}W</strong>
+                    &nbsp;|&nbsp; Est. time: <strong style="color:#111">${mins} min</strong>
+                </span>
             </div>`;
-        }).join("");
+        }
 
         document.getElementById("segments").innerHTML = html;
 
