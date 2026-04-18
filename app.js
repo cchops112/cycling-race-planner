@@ -90,6 +90,7 @@ function getHRZone(bpm, z1, z2, z3, z4){
 }
 
 
+async function fetchWind(){
     let file = document.getElementById("gpxFile").files[0];
     let status = document.getElementById("windStatus");
     if(!file){
@@ -188,8 +189,9 @@ function runCalc(){
     // use previous avg speed if provided, otherwise fall back to estimate
     let useRealSpeed = prevSpeed > 0;
     let realSpeedMs = prevSpeed / 3.6;
-    if(!ftp || !file){
-        alert("Enter FTP + GPX");
+
+    if(!file){
+        alert("Please upload a GPX file.");
         return;
     }
     let reader = new FileReader();
