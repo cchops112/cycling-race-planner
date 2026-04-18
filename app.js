@@ -79,11 +79,35 @@ function runCalc(){
             data:{
                 labels:dist,
                 datasets:[{
+                    label:"Elevation (m)",
                     data:elev,
-                    borderColor:"black",
+                    borderColor:"#0077cc",
+                    backgroundColor:"rgba(0,119,204,0.1)",
                     pointBackgroundColor:colors,
-                    pointRadius:0
+                    pointRadius:0,
+                    fill:true,
+                    tension:0.3
                 }]
+            },
+            options:{
+                responsive:true,
+                plugins:{
+                    legend:{ display:false }
+                },
+                scales:{
+                    x:{
+                        ticks:{
+                            maxTicksLimit:10,
+                            callback: function(val, index){
+                                return parseFloat(dist[index]).toFixed(1) + " km";
+                            }
+                        },
+                        title:{ display:true, text:"Distance (km)" }
+                    },
+                    y:{
+                        title:{ display:true, text:"Elevation (m)" }
+                    }
+                }
             }
         });
     };
