@@ -151,7 +151,13 @@ function runCalc(){
     let IF  = +document.getElementById("targetIF").value || 0.85;
     let windSpeed = +document.getElementById("windSpeed").value || 0;
     let windDir   = document.getElementById("windDir").value;
+    let riderWeight = +document.getElementById("riderWeight").value || 70;
     let file = document.getElementById("gpxFile").files[0];
+
+    // carb recommendation: ~1g per kg per hour, capped between 40g and 90g
+    let carbsPerHour = Math.round(Math.min(90, Math.max(40, riderWeight * 1.0)));
+    let carbLow  = Math.round(carbsPerHour * 0.85);
+    let carbHigh = carbsPerHour;
 
     // determine mode: FTP or HR
     let usingHR = document.getElementById("hrSection").style.display !== "none";
@@ -273,7 +279,7 @@ function runCalc(){
                     pendingDist = d / 1000;
                 } else if(pendingType === type){
                     pendingDist += d / 1000;
-                    if(pendingDist >= 0.5){
+                    if(pendingDist >= 0.25){
                         // commit the previous segment
                         segments.push({
                             startKm:  segStart,
@@ -362,7 +368,7 @@ function runCalc(){
                 let r = carbReminders[carbIndex];
                 html += `<div style="background:#fff7ed;border:2px solid #f97316;border-radius:8px;padding:10px 14px;margin:8px 0;font-size:15px;font-weight:bold;color:#c2410c;">
                     🍌 CARB REMINDER — Hour ${r.hour} (~${r.km.toFixed(1)} km)
-                    <span style="font-weight:normal;font-size:13px;display:block;margin-top:2px;color:#9a3412">Eat 50–60g of carbs now (gel, bar, chews, or banana)</span>
+                    <span style="font-weight:normal;font-size:13px;display:block;margin-top:2px;color:#9a3412">Eat ${carbLow}–${carbHigh}g of carbs now (gel, bar, chews, or banana)</span>
                 </div>`;
                 carbIndex++;
             }
