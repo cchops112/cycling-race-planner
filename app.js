@@ -144,6 +144,7 @@ function degreesToCompass(deg){
     return dirs[Math.round(deg / 45) % 8];
 }
 
+let chart;
 
 function runCalc(){
     let ftp = +document.getElementById("ftp").value;
