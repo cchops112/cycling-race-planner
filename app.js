@@ -21,10 +21,16 @@ function haversine(lat1, lon1, lat2, lon2) {
 
 function optimizePower(grad, ftp, IF, windSpeed, windDir){
     let base = ftp*IF;
-    let adj = grad>0.06?0.15:grad>0.03?0.1:grad>-0.02?0:grad>-0.05?-0.15:-0.25;
+    let gradPct = grad * 100;
+    let adj = gradPct >= 7  ?  0.20 :
+              gradPct >= 5  ?  0.15 :
+              gradPct >= 4  ?  0.10 :
+              gradPct >= 3  ?  0.07 :
+              gradPct >= 1  ?  0.03 :
+              gradPct >= 0  ?  0    :
+              gradPct >= -3 ? -0.10 : -0.20;
     let p = base*(1+adj);
 
-    // wind adjustment: headwind adds ~5W per 10km/h, tailwind reduces, crosswind small penalty
     let windWatts = 0;
     if(windDir === "headwind")  windWatts =  (windSpeed / 10) * 5;
     if(windDir === "tailwind")  windWatts = -(windSpeed / 10) * 4;
@@ -36,29 +42,35 @@ function optimizePower(grad, ftp, IF, windSpeed, windDir){
 
 function getTerrainType(gradPct){
     if(gradPct < 0)   return "descent";
-    if(gradPct < 3)   return "flat";
-    if(gradPct < 6)   return "easy climb";
-    if(gradPct < 10)  return "super climb";
-    return "hard climb";
+    if(gradPct < 1)   return "flat";
+    if(gradPct < 3)   return "elevated flat";
+    if(gradPct < 4)   return "easy climb";
+    if(gradPct < 5)   return "mid climb";
+    if(gradPct < 7)   return "hard climb";
+    return "super climb";
 }
 
 function terrainColor(type){
     return {
-        "descent":    "#3b82f6",
-        "flat":       "#22c55e",
-        "easy climb": "#f59e0b",
-        "super climb":"#f97316",
-        "hard climb": "#ef4444"
+        "descent":       "#3b82f6",
+        "flat":          "#22c55e",
+        "elevated flat": "#84cc16",
+        "easy climb":    "#f59e0b",
+        "mid climb":     "#f97316",
+        "hard climb":    "#ef4444",
+        "super climb":   "#9333ea"
     }[type] || "gray";
 }
 
 function terrainEmoji(type){
     return {
-        "descent":    "⬇️",
-        "flat":       "➡️",
-        "easy climb": "⬆️",
-        "super climb":"🔺",
-        "hard climb": "🚵"
+        "descent":       "⬇️",
+        "flat":          "➡️",
+        "elevated flat": "↗️",
+        "easy climb":    "⬆️",
+        "mid climb":     "🔺",
+        "hard climb":    "🚵",
+        "super climb":   "💀"
     }[type] || "";
 }
 
@@ -93,12 +105,15 @@ function getHRZone(bpm, z1, z2, z3, z4){
 async function fetchWind(){
     let file = document.getElementById("gpxFile").files[0];
     let status = document.getElementById("windStatus");
+    let raceDate = document.getElementById("raceDate").value;
+    let raceTime = document.getElementById("raceTime").value || "08:00";
+
     if(!file){
         status.textContent = "⚠️ Upload a GPX file first so we can read your race location.";
         status.style.color = "#f97316";
         return;
     }
-    status.textContent = "📡 Fetching wind data...";
+    status.textContent = "📡 Fetching wind forecast...";
     status.style.color = "#6b7280";
 
     // read GPX to get start coordinates
@@ -114,23 +129,42 @@ async function fetchWind(){
     let lon = +pts[0].getAttribute("lon");
 
     try {
-        let url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`;
-        let res = await fetch(url);
-        let data = await res.json();
-        let speed = Math.round(data.current.wind_speed_10m);
-        let degrees = data.current.wind_direction_10m;
+        let url, speed, degrees, forecastLabel;
+        let today = new Date().toISOString().split("T")[0];
 
-        // set wind speed
+        if(!raceDate || raceDate === today){
+            // no date or today — use current conditions
+            url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`;
+            let res = await fetch(url);
+            let data = await res.json();
+            speed   = Math.round(data.current.wind_speed_10m);
+            degrees = data.current.wind_direction_10m;
+            forecastLabel = "Current conditions";
+        } else {
+            // future date — use hourly forecast
+            let targetHour = parseInt(raceTime.split(":")[0]);
+            url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh&start_date=${raceDate}&end_date=${raceDate}`;
+            let res = await fetch(url);
+            let data = await res.json();
+
+            if(!data.hourly || !data.hourly.wind_speed_10m){
+                // date too far in future (>16 days) — Open-Meteo only forecasts 16 days
+                status.innerHTML = `⚠️ Forecast only available up to 16 days ahead. Your race date is too far away — check back closer to race day.`;
+                status.style.color = "#f97316";
+                return;
+            }
+
+            speed   = Math.round(data.hourly.wind_speed_10m[targetHour]);
+            degrees = data.hourly.wind_direction_10m[targetHour];
+            forecastLabel = `Forecast for ${raceDate} at ${raceTime}`;
+        }
+
         document.getElementById("windSpeed").value = speed;
-
-        // convert degrees to headwind/tailwind/crosswind
-        // we treat 0/360 = northerly, and make a simple call based on compass
-        // since we don't know exact race heading, we describe the compass direction
-        // and let user adjust if needed
         let compassDir = degreesToCompass(degrees);
 
-        status.innerHTML = `✅ Wind at race start: <strong>${speed} km/h</strong> from the <strong>${compassDir}</strong> (${degrees}°)<br>
-        <span style="font-size:11px;color:#9ca3af">Select headwind/tailwind/crosswind based on your race direction.</span>`;
+        status.innerHTML = `✅ <strong>${forecastLabel}</strong><br>
+            Wind: <strong>${speed} km/h</strong> from the <strong>${compassDir}</strong> (${degrees}°)<br>
+            <span style="font-size:11px;color:#9ca3af">Select headwind/tailwind/crosswind based on your race direction.</span>`;
         status.style.color = "#16a34a";
 
     } catch(err) {
