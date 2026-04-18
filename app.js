@@ -60,6 +60,19 @@ function runCalc(){
     let IF  = +document.getElementById("targetIF").value;
     let crr = +document.getElementById("crr").value;
     let file = document.getElementById("gpxFile").files[0];
+
+    // parse previous year data if entered
+    let prevTimeInput = document.getElementById("prevTime").value.trim();
+    let prevSpeed = +document.getElementById("prevSpeed").value;
+    let prevTimeSec = 0;
+    if(prevTimeInput){
+        let parts = prevTimeInput.split(":").map(Number);
+        if(parts.length === 2) prevTimeSec = parts[0]*3600 + parts[1]*60;
+        if(parts.length === 3) prevTimeSec = parts[0]*3600 + parts[1]*60 + parts[2];
+    }
+    // use previous avg speed if provided, otherwise fall back to estimate
+    let useRealSpeed = prevSpeed > 0;
+    let realSpeedMs = prevSpeed / 3.6;
     if(!ftp || !file){
         alert("Enter FTP + GPX");
         return;
@@ -89,6 +102,12 @@ function runCalc(){
 
         // estimate speed from power and gradient
         function estimateSpeed(power, grad){
+            if(useRealSpeed){
+                // scale real speed by gradient penalty
+                let gradPenalty = Math.max(0.3, 1 - grad * 8);
+                let powerBoost = power / (ftp * IF);
+                return realSpeedMs * gradPenalty * powerBoost;
+            }
             let baseSpeed = 8;
             let gradPenalty = Math.max(0.3, 1 - grad * 8);
             let powerBoost = power / (ftp * IF);
@@ -159,6 +178,23 @@ function runCalc(){
             });
         }
 
+        // render previous year summary if data was entered
+        let prevBanner = "";
+        if(prevTimeSec > 0 || prevSpeed > 0){
+            let ph = Math.floor(prevTimeSec/3600);
+            let pm = Math.floor((prevTimeSec%3600)/60);
+            let timeStr = prevTimeSec > 0 ? `${ph}h ${pm}m` : "—";
+            let speedStr = prevSpeed > 0 ? `${prevSpeed} km/h` : "—";
+            prevBanner = `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:14px;color:#1e40af">
+                <strong>&#x1F4C5; Previous year's race</strong>
+                &nbsp;|&nbsp; Finish time: <strong>${timeStr}</strong>
+                &nbsp;|&nbsp; Avg speed: <strong>${speedStr}</strong>
+                <span style="display:block;margin-top:4px;font-size:12px;color:#3b82f6">
+                    ${useRealSpeed ? "Timing estimates are based on your previous avg speed." : "Enter avg speed above for more accurate time estimates."}
+                </span>
+            </div>`;
+        }
+
         // render segments with carb reminders inserted at the right km
         let carbIndex = 0;
         let html = "";
@@ -188,7 +224,7 @@ function runCalc(){
             </div>`;
         }
 
-        document.getElementById("segments").innerHTML = html;
+        document.getElementById("segments").innerHTML = prevBanner + html;
 
         if(chart) chart.destroy();
         chart = new Chart(document.getElementById("chart"),{
