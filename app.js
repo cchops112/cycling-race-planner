@@ -48,7 +48,8 @@ function runCalc(){
             );
             td+=d;
             dist.push(td/1000);
-            elev.push(+p2.getElementsByTagName("ele")[0].textContent);
+            let eleTag = p2.getElementsByTagName("ele")[0];
+elev.push(eleTag ? +eleTag.textContent : 0);
         }
         let colors=[], html="";
         for(let i=1;i<elev.length;i++){
