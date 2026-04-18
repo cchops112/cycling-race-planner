@@ -22,11 +22,13 @@ label {
     display:block;
     margin-top:10px;
     font-weight:bold;
+    font-size:14px;
 }
-input {
+input, select {
     width:100%;
     padding:6px;
     margin-top:4px;
+    box-sizing:border-box;
 }
 button {
     margin-top:10px;
@@ -37,6 +39,10 @@ button {
     border:none;
     border-radius:6px;
     cursor:pointer;
+    font-size:15px;
+}
+button:active {
+    background:#005fa3;
 }
 .collapsible {
     background:#eef6ff;
@@ -55,4 +61,51 @@ button {
 .segment {
     padding:5px;
     border-bottom:1px solid #ddd;
+}
+h1 {
+    font-size:24px;
+    margin-bottom:16px;
+}
+h3 {
+    font-size:18px;
+}
+
+/* ── Mobile styles ── */
+@media (max-width: 640px) {
+    .container {
+        padding: 12px;
+    }
+    h1 {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+    /* stack form and chart vertically on mobile */
+    .top {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    /* make chart taller so it's readable */
+    .card canvas {
+        min-height: 220px;
+    }
+    label {
+        font-size: 15px;
+    }
+    input, select {
+        font-size: 16px; /* prevents iOS auto-zoom on focus */
+        padding: 8px;
+    }
+    button {
+        padding: 14px;
+        font-size: 16px;
+    }
+    .collapsible {
+        font-size: 14px;
+        padding: 8px;
+    }
+    /* segments readable on small screen */
+    .segment {
+        font-size: 14px;
+        padding: 8px 4px;
+    }
 }
