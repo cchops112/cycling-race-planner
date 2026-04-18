@@ -11,24 +11,43 @@
 <h1>Race Calc Pro</h1>
 <div class="top">
 <div class="card">
-<label>FTP (Watts)</label>
-<input type="number" id="ftp">
-<div class="collapsible">What is FTP? ⬇</div>
-<div class="content">
-<p>FTP = max 1-hour power. Use ~95% of 20-min effort.</p>
+<div style="display:flex;gap:8px;margin-bottom:12px">
+    <button type="button" id="tabFTP" onclick="switchTab('ftp')" style="flex:1;background:#0077cc;color:white;border:none;padding:8px;border-radius:6px;cursor:pointer;font-size:13px">Power (FTP)</button>
+    <button type="button" id="tabHR" onclick="switchTab('hr')" style="flex:1;background:#e5e7eb;color:#374151;border:none;padding:8px;border-radius:6px;cursor:pointer;font-size:13px">Heart Rate</button>
 </div>
-<label>Target IF</label>
-<input type="number" id="targetIF" value="0.85" step="0.01">
-<div class="collapsible">What is IF? ⬇</div>
-<div class="content">
-<p>IF = effort vs FTP. 0.85 = 85% FTP.</p>
+
+<div id="ftpSection">
+    <label>FTP (Watts)</label>
+    <input type="number" id="ftp" placeholder="e.g. 250">
+    <div class="collapsible">What is FTP? ⬇</div>
+    <div class="content">
+        <p>FTP = max 1-hour power. Use ~95% of 20-min effort.</p>
+    </div>
+    <label>Target IF</label>
+    <input type="number" id="targetIF" value="0.85" step="0.01">
+    <div class="collapsible">What is IF? ⬇</div>
+    <div class="content">
+        <p>IF = effort vs FTP. 0.85 = 85% FTP.</p>
+    </div>
 </div>
-<label>Crr</label>
-<input type="number" id="crr" value="0.005" step="0.001">
-<div class="collapsible">What is Crr? ⬇</div>
-<div class="content">
-<p>Rolling resistance. Gravel ≈ 0.008–0.01</p>
+
+<div id="hrSection" style="display:none">
+    <p style="font-size:12px;color:#6b7280;margin:0 0 8px">Enter the upper limit of each heart rate zone (bpm)</p>
+    <label>Zone 1 — Easy (up to)</label>
+    <input type="number" id="hrZ1" placeholder="e.g. 115 bpm">
+    <label>Zone 2 — Moderate (up to)</label>
+    <input type="number" id="hrZ2" placeholder="e.g. 135 bpm">
+    <label>Zone 3 — Hard (up to)</label>
+    <input type="number" id="hrZ3" placeholder="e.g. 155 bpm">
+    <label>Zone 4 — Very hard (up to)</label>
+    <input type="number" id="hrZ4" placeholder="e.g. 175 bpm">
+    <div class="collapsible">What are HR zones? ⬇</div>
+    <div class="content">
+        <p>Zones are effort levels based on heart rate. Zone 1 = very easy, Zone 4 = very hard. Stay in Zone 2–3 for most of a long race.</p>
+    </div>
 </div>
+
+
 <div style="border-top:1px solid #e5e7eb;margin-top:16px;padding-top:12px">
 <p style="font-size:13px;color:#6b7280;margin:0 0 8px">&#x1F4A8; My Wind Sock</p>
 <button type="button" onclick="fetchWind()" style="background:#0ea5e9;margin-bottom:8px">&#x1F4E1; Auto-fetch wind from GPX</button>
