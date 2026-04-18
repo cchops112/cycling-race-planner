@@ -178,7 +178,7 @@ function degreesToCompass(deg){
     return dirs[Math.round(deg / 45) % 8];
 }
 
-let chart;
+let chart, chart2;
 
 function runCalc(){
     let ftp = +document.getElementById("ftp").value;
@@ -186,6 +186,8 @@ function runCalc(){
     let windSpeed = +document.getElementById("windSpeed").value || 0;
     let windDir   = document.getElementById("windDir").value;
     let riderWeight = +document.getElementById("riderWeight").value || 70;
+    let targetSpeed = +document.getElementById("targetSpeed").value || 0;
+    let targetSpeedMs = targetSpeed / 3.6;
     let file = document.getElementById("gpxFile").files[0];
 
     // carb recommendation: ~1g per kg per hour, capped between 40g and 90g
@@ -261,15 +263,40 @@ function runCalc(){
         // estimate speed from power and gradient
         function estimateSpeed(power, grad){
             if(useRealSpeed){
-                // scale real speed by gradient penalty
                 let gradPenalty = Math.max(0.3, 1 - grad * 8);
                 let powerBoost = power / (ftp * IF);
                 return realSpeedMs * gradPenalty * powerBoost;
+            }
+            if(targetSpeedMs > 0){
+                let gradPenalty = Math.max(0.3, 1 - grad * 8);
+                let powerBoost = power / (ftp * IF);
+                return targetSpeedMs * gradPenalty * powerBoost;
             }
             let baseSpeed = 8;
             let gradPenalty = Math.max(0.3, 1 - grad * 8);
             let powerBoost = power / (ftp * IF);
             return baseSpeed * gradPenalty * powerBoost;
+        }
+
+        // if target speed set, calculate a power scale factor so avg speed hits target
+        // we do a first pass to get baseline avg speed, then scale power to match
+        let powerScaleFactor = 1.0;
+        if(targetSpeedMs > 0 && !useRealSpeed){
+            let totalDist = 0, totalTime = 0;
+            for(let i=1;i<elev.length;i++){
+                let d=(dist[i]-dist[i-1])*1000;
+                if(d===0) continue;
+                let grad=(elev[i]-elev[i-1])/d;
+                let power = optimizePower(grad, ftp, IF, windSpeed, windDir);
+                let gradPenalty = Math.max(0.3, 1 - grad * 8);
+                let spd = 8 * gradPenalty * (power / (ftp * IF));
+                totalTime += d / spd;
+                totalDist += d;
+            }
+            let baseAvgSpeed = totalDist / totalTime;
+            powerScaleFactor = targetSpeedMs / baseAvgSpeed;
+            // cap scale factor to reasonable range
+            powerScaleFactor = Math.max(0.5, Math.min(1.5, powerScaleFactor));
         }
 
         // track hourly carb reminders
@@ -279,6 +306,8 @@ function runCalc(){
 
         // build per-point colors and terrain-based segments
         let colors = [];
+        let powerPoints = [];
+        let speedPoints = [];
         let segments = [];
         let segType = null;
         let segStart = dist[1];
@@ -290,12 +319,14 @@ function runCalc(){
             if(d===0){ colors.push("gray"); continue; }
             let grad=(elev[i]-elev[i-1])/d;
             let gradPct = grad*100;
-            let power = optimizePower(grad, ftp, IF, windSpeed, windDir);
+            let power = optimizePower(grad, ftp, IF, windSpeed, windDir) * powerScaleFactor;
             let type = getTerrainType(gradPct);
             colors.push(terrainColor(type));
 
             let speed = estimateSpeed(power, grad);
             let timeSec = d / speed;
+            powerPoints.push(Math.round(power));
+            speedPoints.push(+(speed * 3.6).toFixed(1));
             totalTimeSec += timeSec;
 
             if(totalTimeSec >= nextCarbHour){
@@ -453,18 +484,21 @@ function runCalc(){
             }
         }
 
+        let actualAvgSpeed = totalEstSec > 0 ? ((dist[dist.length-1] / totalEstSec) * 3600).toFixed(1) : "—";
+
         let finishBanner = `<div style="
-            background: linear-gradient(135deg, #0077cc, #005fa3);
+            background: #3d5220;
             border-radius: 10px;
             padding: 16px 20px;
             margin-top: 16px;
-            color: white;
+            color: #f0f5e8;
             text-align: center;
         ">
             <div style="font-size:13px;opacity:0.85;margin-bottom:4px">&#x1F3C1; Estimated finish time if you follow this plan</div>
             <div style="font-size:32px;font-weight:bold;letter-spacing:2px">
                 ${eth}h ${etm}m ${ets}s
             </div>
+            <div style="font-size:14px;margin-top:6px;opacity:0.9">Avg speed: ${actualAvgSpeed} km/h${targetSpeed > 0 ? ` (target: ${targetSpeed} km/h)` : ""}</div>
             ${comparisonStr ? `<div style="margin-top:8px;font-size:14px">${comparisonStr}</div>` : ""}
         </div>`;
 
@@ -483,14 +517,13 @@ function runCalc(){
                     pointBackgroundColor: colors,
                     pointRadius: 0,
                     fill: true,
-                    tension: 0.3
+                    tension: 0.3,
+                    borderWidth: 2
                 }]
             },
             options:{
                 responsive:true,
-                plugins:{
-                    legend:{ display:false }
-                },
+                plugins:{ legend:{ display:false } },
                 scales:{
                     x:{
                         ticks:{
@@ -501,8 +534,101 @@ function runCalc(){
                         },
                         title:{ display:true, text:"Distance (km)" }
                     },
-                    y:{
-                        title:{ display:true, text:"Elevation (m)" }
+                    y:{ title:{ display:true, text:"Elevation (m)" } }
+                }
+            }
+        });
+
+        // second chart — power/HR left axis, speed + elevation right axis
+        let distLabels = dist.slice(1).map(d => parseFloat(d).toFixed(2));
+        if(chart2) chart2.destroy();
+        chart2 = new Chart(document.getElementById("chart2"),{
+            type:"line",
+            data:{
+                labels: distLabels,
+                datasets:[
+                    {
+                        label: usingHR ? "Target HR zone" : "Power (W)",
+                        data: powerPoints,
+                        borderColor: "#ef4444",
+                        backgroundColor: "rgba(239,68,68,0.08)",
+                        pointRadius: 0,
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: false,
+                        yAxisID: "yLeft"
+                    },
+                    {
+                        label: "Speed (km/h)",
+                        data: speedPoints,
+                        borderColor: "#f97316",
+                        backgroundColor: "rgba(249,115,22,0.08)",
+                        pointRadius: 0,
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: false,
+                        yAxisID: "yRight"
+                    },
+                    {
+                        label: "Elevation (m)",
+                        data: elev.slice(1),
+                        borderColor: "#3b82f6",
+                        backgroundColor: "rgba(59,130,246,0.08)",
+                        pointRadius: 0,
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true,
+                        yAxisID: "yRight2"
+                    }
+                ]
+            },
+            options:{
+                responsive: true,
+                interaction:{ mode:"index", intersect:false },
+                plugins:{
+                    legend:{
+                        display: true,
+                        labels:{ color:"#f0f5e8", boxWidth:20, padding:16 }
+                    },
+                    tooltip:{
+                        callbacks:{
+                            title: items => `${items[0].label} km`,
+                        }
+                    }
+                },
+                scales:{
+                    x:{
+                        ticks:{
+                            maxTicksLimit: 12,
+                            color: "#c5d9a0",
+                            callback: function(val, index){
+                                return distLabels[index] ? parseFloat(distLabels[index]).toFixed(1) + " km" : "";
+                            }
+                        },
+                        title:{ display:true, text:"Distance (km)", color:"#c5d9a0" },
+                        grid:{ color:"rgba(197,217,160,0.15)" }
+                    },
+                    yLeft:{
+                        type:"linear",
+                        position:"left",
+                        title:{ display:true, text: usingHR ? "HR Zone effort" : "Power (W)", color:"#ef4444" },
+                        ticks:{ color:"#ef4444" },
+                        grid:{ color:"rgba(197,217,160,0.15)" }
+                    },
+                    yRight:{
+                        type:"linear",
+                        position:"right",
+                        title:{ display:true, text:"Speed (km/h)", color:"#f97316" },
+                        ticks:{ color:"#f97316" },
+                        grid:{ drawOnChartArea:false }
+                    },
+                    yRight2:{
+                        type:"linear",
+                        position:"right",
+                        title:{ display:true, text:"Elevation (m)", color:"#3b82f6" },
+                        ticks:{ color:"#3b82f6" },
+                        grid:{ drawOnChartArea:false },
+                        offset: true
                     }
                 }
             }
