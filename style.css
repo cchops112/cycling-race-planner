@@ -19,17 +19,14 @@ body {
     border-radius: 10px;
     color: #f0f5e8;
 }
-h1 {
-    color: #f0f5e8;
-}
-h3 {
-    color: #f0f5e8;
-}
+h1 { color: #f0f5e8; }
+h3 { color: #f0f5e8; }
 label {
     display: block;
     margin-top: 10px;
     font-weight: bold;
     color: #f0f5e8;
+    font-size: 14px;
 }
 input, select {
     width: 100%;
@@ -40,10 +37,9 @@ input, select {
     border: 1px solid #3d5220;
     border-radius: 4px;
     color: #f0f5e8;
+    font-size: 14px;
 }
-input::placeholder {
-    color: #c5d9a0;
-}
+input::placeholder { color: #c5d9a0; }
 button {
     margin-top: 10px;
     padding: 10px;
@@ -55,58 +51,56 @@ button {
     cursor: pointer;
     font-size: 15px;
 }
-button:hover {
-    background: #2e3d18;
-}
-button:active {
-    background: #1f2910;
-}
+button:hover { background: #2e3d18; }
+button:active { background: #1f2910; }
 .collapsible {
     background: #5c7a35;
-    padding: 6px;
-    margin-top: 5px;
+    padding: 8px 10px;
+    margin-top: 8px;
     cursor: pointer;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 14px;
     color: #f0f5e8;
 }
+.collapsible:hover { background: #3d5220; }
 .content {
     max-height: 0;
     overflow: hidden;
     transition: 0.3s;
-    font-size: 13px;
-    color: #f0f5e8;
 }
 .content p {
-    margin: 6px 0;
+    font-size: 14px;
+    color: #f0f5e8;
+    margin: 8px 4px;
+    line-height: 1.6;
 }
 .segment {
     padding: 5px;
     border-bottom: 1px solid #5c7a35;
     color: #f0f5e8;
 }
-p {
-    color: #f0f5e8;
+p { color: #f0f5e8; }
+
+/* GPX drag and drop zone */
+.gpx-drop {
+    margin-top: 8px;
+    border: 2px dashed #5c7a35;
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    background: #4a5c2f;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
 }
-/* small text hints */
-span[style*="color:#6b7280"] {
-    color: #c5d9a0 !important;
+.gpx-drop:hover, .gpx-drop.dragover {
+    border-color: #c5d9a0;
+    background: #3d5220;
 }
 
 /* Mobile only */
 @media (max-width: 640px) {
-    .container {
-        padding: 10px;
-    }
-    .top {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-    input, select {
-        font-size: 16px;
-        padding: 8px;
-    }
-    button {
-        padding: 12px;
-    }
+    .container { padding: 10px; }
+    .top { grid-template-columns: 1fr; gap: 12px; }
+    input, select { font-size: 16px; padding: 8px; }
+    button { padding: 12px; }
 }
