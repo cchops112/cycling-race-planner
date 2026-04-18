@@ -1,64 +1,99 @@
 body {
     font-family: Arial;
-    background:#f4f6f8;
-    margin:0;
+    background: #4a5c2f;
+    margin: 0;
 }
 .container {
-    max-width:1000px;
-    margin:auto;
-    padding:20px;
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
 }
 .top {
-    display:grid;
-    grid-template-columns:1fr 2fr;
-    gap:20px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
 }
 .card {
-    background:white;
-    padding:15px;
-    border-radius:10px;
+    background: #7a9a4a;
+    padding: 15px;
+    border-radius: 10px;
+    color: #f0f5e8;
+}
+h1 {
+    color: #f0f5e8;
+}
+h3 {
+    color: #f0f5e8;
 }
 label {
-    display:block;
-    margin-top:10px;
-    font-weight:bold;
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+    color: #f0f5e8;
 }
 input, select {
-    width:100%;
-    padding:6px;
-    margin-top:4px;
-    box-sizing:border-box;
+    width: 100%;
+    padding: 6px;
+    margin-top: 4px;
+    box-sizing: border-box;
+    background: #5c7a35;
+    border: 1px solid #3d5220;
+    border-radius: 4px;
+    color: #f0f5e8;
+}
+input::placeholder {
+    color: #c5d9a0;
 }
 button {
-    margin-top:10px;
-    padding:10px;
-    width:100%;
-    background:#0077cc;
-    color:white;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
+    margin-top: 10px;
+    padding: 10px;
+    width: 100%;
+    background: #3d5220;
+    color: #f0f5e8;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+}
+button:hover {
+    background: #2e3d18;
+}
+button:active {
+    background: #1f2910;
 }
 .collapsible {
-    background:#eef6ff;
-    padding:6px;
-    margin-top:5px;
-    cursor:pointer;
-    border-radius:6px;
-    font-size:13px;
+    background: #5c7a35;
+    padding: 6px;
+    margin-top: 5px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #f0f5e8;
 }
 .content {
-    max-height:0;
-    overflow:hidden;
-    transition:0.3s;
-    font-size:13px;
+    max-height: 0;
+    overflow: hidden;
+    transition: 0.3s;
+    font-size: 13px;
+    color: #f0f5e8;
+}
+.content p {
+    margin: 6px 0;
 }
 .segment {
-    padding:5px;
-    border-bottom:1px solid #ddd;
+    padding: 5px;
+    border-bottom: 1px solid #5c7a35;
+    color: #f0f5e8;
+}
+p {
+    color: #f0f5e8;
+}
+/* small text hints */
+span[style*="color:#6b7280"] {
+    color: #c5d9a0 !important;
 }
 
-/* Mobile only — desktop styles above are untouched */
+/* Mobile only */
 @media (max-width: 640px) {
     .container {
         padding: 10px;
