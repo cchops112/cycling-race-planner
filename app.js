@@ -6,6 +6,34 @@ document.addEventListener("DOMContentLoaded", () => {
             c.style.maxHeight = c.style.maxHeight ? null : c.scrollHeight + "px";
         });
     });
+
+    // drag and drop GPX
+    let drop = document.getElementById("gpxDrop");
+    let fileInput = document.getElementById("gpxFile");
+
+    drop.addEventListener("dragover", e => {
+        e.preventDefault();
+        drop.classList.add("dragover");
+    });
+    drop.addEventListener("dragleave", () => drop.classList.remove("dragover"));
+    drop.addEventListener("drop", e => {
+        e.preventDefault();
+        drop.classList.remove("dragover");
+        let file = e.dataTransfer.files[0];
+        if(file && file.name.endsWith(".gpx")){
+            let dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+            document.getElementById("gpxFileName").textContent = "✅ " + file.name;
+        } else {
+            document.getElementById("gpxFileName").textContent = "⚠️ Please drop a .gpx file";
+        }
+    });
+    fileInput.addEventListener("change", () => {
+        if(fileInput.files[0]){
+            document.getElementById("gpxFileName").textContent = "✅ " + fileInput.files[0].name;
+        }
+    });
 });
 
 function haversine(lat1, lon1, lat2, lon2) {
