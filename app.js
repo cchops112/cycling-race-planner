@@ -539,44 +539,73 @@ function runCalc(){
             }
         });
 
-        // second chart — power/HR left axis, speed + elevation right axis
-        let distLabels = dist.slice(1).map(d => parseFloat(d).toFixed(2));
+        // smooth data by averaging every N points to reduce noise
+        function smoothData(arr, window){
+            let out = [];
+            for(let i=0; i<arr.length; i++){
+                let start = Math.max(0, i - Math.floor(window/2));
+                let end   = Math.min(arr.length, i + Math.floor(window/2) + 1);
+                let slice = arr.slice(start, end);
+                out.push(+(slice.reduce((a,b)=>a+b,0)/slice.length).toFixed(1));
+            }
+            return out;
+        }
+
+        // reduce number of points to max 300 for cleaner chart
+        function downsample(arr, maxPoints){
+            if(arr.length <= maxPoints) return arr;
+            let step = arr.length / maxPoints;
+            let out = [];
+            for(let i=0; i<maxPoints; i++){
+                out.push(arr[Math.round(i*step)]);
+            }
+            return out;
+        }
+
+        let maxPts = 300;
+        let smoothWindow = Math.max(5, Math.floor(powerPoints.length / 100));
+        let smoothedPower = downsample(smoothData(powerPoints, smoothWindow), maxPts);
+        let smoothedSpeed = downsample(smoothData(speedPoints, smoothWindow), maxPts);
+        let smoothedElev  = downsample(smoothData(elev.slice(1), smoothWindow), maxPts);
+        let smoothedDist  = downsample(dist.slice(1).map(d => parseFloat(d).toFixed(2)), maxPts);
+
         if(chart2) chart2.destroy();
         chart2 = new Chart(document.getElementById("chart2"),{
             type:"line",
             data:{
-                labels: distLabels,
+                labels: smoothedDist,
                 datasets:[
                     {
-                        label: usingHR ? "Target HR zone" : "Power (W)",
-                        data: powerPoints,
-                        borderColor: "#ef4444",
-                        backgroundColor: "rgba(239,68,68,0.08)",
+                        label: usingHR ? "HR Zone effort" : "Power (W)",
+                        data: smoothedPower,
+                        borderColor: "#ffffff",
+                        backgroundColor: "transparent",
                         pointRadius: 0,
-                        borderWidth: 3,
-                        tension: 0.3,
+                        borderWidth: 2.5,
+                        tension: 0.4,
                         fill: false,
                         yAxisID: "yLeft"
                     },
                     {
                         label: "Speed (km/h)",
-                        data: speedPoints,
-                        borderColor: "#f97316",
-                        backgroundColor: "rgba(249,115,22,0.08)",
+                        data: smoothedSpeed,
+                        borderColor: "#f0f5e8",
+                        backgroundColor: "transparent",
                         pointRadius: 0,
-                        borderWidth: 3,
-                        tension: 0.3,
+                        borderWidth: 2.5,
+                        tension: 0.4,
                         fill: false,
+                        borderDash: [6, 3],
                         yAxisID: "yRight"
                     },
                     {
                         label: "Elevation (m)",
-                        data: elev.slice(1),
-                        borderColor: "#3b82f6",
-                        backgroundColor: "rgba(59,130,246,0.08)",
+                        data: smoothedElev,
+                        borderColor: "#c5d9a0",
+                        backgroundColor: "rgba(197,217,160,0.15)",
                         pointRadius: 0,
-                        borderWidth: 3,
-                        tension: 0.3,
+                        borderWidth: 2,
+                        tension: 0.4,
                         fill: true,
                         yAxisID: "yRight2"
                     }
@@ -588,45 +617,40 @@ function runCalc(){
                 plugins:{
                     legend:{
                         display: true,
-                        labels:{ color:"#f0f5e8", boxWidth:20, padding:16 }
-                    },
-                    tooltip:{
-                        callbacks:{
-                            title: items => `${items[0].label} km`,
-                        }
+                        labels:{ color:"#f0f5e8", boxWidth:16, padding:20, font:{ size:13 } }
                     }
                 },
                 scales:{
                     x:{
                         ticks:{
-                            maxTicksLimit: 12,
+                            maxTicksLimit: 10,
                             color: "#c5d9a0",
                             callback: function(val, index){
-                                return distLabels[index] ? parseFloat(distLabels[index]).toFixed(1) + " km" : "";
+                                return smoothedDist[index] ? parseFloat(smoothedDist[index]).toFixed(1) + " km" : "";
                             }
                         },
                         title:{ display:true, text:"Distance (km)", color:"#c5d9a0" },
-                        grid:{ color:"rgba(197,217,160,0.15)" }
+                        grid:{ color:"rgba(197,217,160,0.1)" }
                     },
                     yLeft:{
                         type:"linear",
                         position:"left",
-                        title:{ display:true, text: usingHR ? "HR Zone effort" : "Power (W)", color:"#ef4444" },
-                        ticks:{ color:"#ef4444" },
-                        grid:{ color:"rgba(197,217,160,0.15)" }
+                        title:{ display:true, text: usingHR ? "HR Zone effort" : "Power (W)", color:"#ffffff" },
+                        ticks:{ color:"#ffffff" },
+                        grid:{ color:"rgba(197,217,160,0.1)" }
                     },
                     yRight:{
                         type:"linear",
                         position:"right",
-                        title:{ display:true, text:"Speed (km/h)", color:"#f97316" },
-                        ticks:{ color:"#f97316" },
+                        title:{ display:true, text:"Speed (km/h)", color:"#f0f5e8" },
+                        ticks:{ color:"#f0f5e8" },
                         grid:{ drawOnChartArea:false }
                     },
                     yRight2:{
                         type:"linear",
                         position:"right",
-                        title:{ display:true, text:"Elevation (m)", color:"#3b82f6" },
-                        ticks:{ color:"#3b82f6" },
+                        title:{ display:true, text:"Elevation (m)", color:"#c5d9a0" },
+                        ticks:{ color:"#c5d9a0" },
                         grid:{ drawOnChartArea:false },
                         offset: true
                     }
