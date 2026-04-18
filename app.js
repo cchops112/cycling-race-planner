@@ -224,7 +224,46 @@ function runCalc(){
             </div>`;
         }
 
-        document.getElementById("segments").innerHTML = prevBanner + html;
+        // calculate total estimated time from all segments
+        let totalEstSec = segments.reduce((sum, seg) => sum + seg.timeSec, 0);
+        let eth = Math.floor(totalEstSec / 3600);
+        let etm = Math.floor((totalEstSec % 3600) / 60);
+        let ets = Math.round(totalEstSec % 60);
+
+        // compare to previous year if available
+        let comparisonStr = "";
+        if(prevTimeSec > 0){
+            let diff = prevTimeSec - totalEstSec;
+            let absDiff = Math.abs(diff);
+            let dh = Math.floor(absDiff / 3600);
+            let dm = Math.floor((absDiff % 3600) / 60);
+            let ds = Math.round(absDiff % 60);
+            let diffLabel = dh > 0 ? `${dh}h ${dm}m ${ds}s` : dm > 0 ? `${dm}m ${ds}s` : `${ds}s`;
+            if(diff > 0){
+                comparisonStr = `<span style="color:#16a34a">&#x2B06; ${diffLabel} faster than last year</span>`;
+            } else if(diff < 0){
+                comparisonStr = `<span style="color:#dc2626">&#x2B07; ${diffLabel} slower than last year</span>`;
+            } else {
+                comparisonStr = `<span style="color:#6b7280">Same as last year</span>`;
+            }
+        }
+
+        let finishBanner = `<div style="
+            background: linear-gradient(135deg, #0077cc, #005fa3);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-top: 16px;
+            color: white;
+            text-align: center;
+        ">
+            <div style="font-size:13px;opacity:0.85;margin-bottom:4px">&#x1F3C1; Estimated finish time if you follow this plan</div>
+            <div style="font-size:32px;font-weight:bold;letter-spacing:2px">
+                ${eth}h ${etm}m ${ets}s
+            </div>
+            ${comparisonStr ? `<div style="margin-top:8px;font-size:14px">${comparisonStr}</div>` : ""}
+        </div>`;
+
+        document.getElementById("segments").innerHTML = prevBanner + html + finishBanner;
 
         if(chart) chart.destroy();
         chart = new Chart(document.getElementById("chart"),{
