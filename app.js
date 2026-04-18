@@ -288,22 +288,39 @@ function runCalc(){
             elev.push(eleTag ? +eleTag.textContent : elev[elev.length-1]);
         }
 
-        // estimate speed from power and gradient
+        // realistic speed from power using simplified cycling physics
+        // power = (Fg + Frr + Fd) * v
+        // Fg = gravity = mass * 9.81 * grad
+        // Frr = rolling = mass * 9.81 * 0.005
+        // Fd = aero drag = 0.5 * 1.225 * 0.35 * v^2
+        // solve for v numerically
+        function powerToSpeed(power, grad){
+            let mass = riderWeight;
+            let g = 9.81;
+            let Crr = 0.005;
+            let CdA = 0.35;
+            let rho = 1.225;
+            // binary search for speed
+            let lo = 0.5, hi = 25; // m/s (1.8 to 90 km/h)
+            for(let i=0; i<30; i++){
+                let mid = (lo + hi) / 2;
+                let Fg  = mass * g * grad;
+                let Frr = mass * g * Crr;
+                let Fd  = 0.5 * rho * CdA * mid * mid;
+                let Preq = (Fg + Frr + Fd) * mid;
+                if(Preq < power) lo = mid; else hi = mid;
+            }
+            return (lo + hi) / 2;
+        }
+
         function estimateSpeed(power, grad){
             if(useRealSpeed){
+                // scale real speed by gradient and power ratio
                 let gradPenalty = Math.max(0.3, 1 - grad * 8);
-                let powerBoost = power / (ftp * IF);
+                let powerBoost  = power / (ftp * IF);
                 return realSpeedMs * gradPenalty * powerBoost;
             }
-            if(targetSpeedMs > 0){
-                let gradPenalty = Math.max(0.3, 1 - grad * 8);
-                let powerBoost = power / (ftp * IF);
-                return targetSpeedMs * gradPenalty * powerBoost;
-            }
-            let baseSpeed = 8;
-            let gradPenalty = Math.max(0.3, 1 - grad * 8);
-            let powerBoost = power / (ftp * IF);
-            return baseSpeed * gradPenalty * powerBoost;
+            return powerToSpeed(power, grad);
         }
 
         // if target speed set, calculate a power scale factor so avg speed hits target
@@ -316,15 +333,13 @@ function runCalc(){
                 if(d===0) continue;
                 let grad=(elev[i]-elev[i-1])/d;
                 let power = optimizePower(grad, ftp, IF, windSpeed, windDir);
-                let gradPenalty = Math.max(0.3, 1 - grad * 8);
-                let spd = 8 * gradPenalty * (power / (ftp * IF));
+                let spd = powerToSpeed(power, grad);
                 totalTime += d / spd;
                 totalDist += d;
             }
             let baseAvgSpeed = totalDist / totalTime;
             powerScaleFactor = targetSpeedMs / baseAvgSpeed;
-            // cap scale factor to reasonable range
-            powerScaleFactor = Math.max(0.5, Math.min(1.5, powerScaleFactor));
+            powerScaleFactor = Math.max(0.6, Math.min(1.4, powerScaleFactor));
         }
 
         // track hourly carb reminders
