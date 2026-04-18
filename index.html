@@ -15,9 +15,11 @@
 </div>
 <div class="top">
 <div class="card">
+
+<!-- Power / HR tabs -->
 <div style="display:flex;gap:8px;margin-bottom:12px">
-    <button type="button" id="tabFTP" onclick="switchTab('ftp')" style="flex:1;background:#0077cc;color:white;border:none;padding:8px;border-radius:6px;cursor:pointer;font-size:13px">Power (FTP)</button>
-    <button type="button" id="tabHR" onclick="switchTab('hr')" style="flex:1;background:#e5e7eb;color:#374151;border:none;padding:8px;border-radius:6px;cursor:pointer;font-size:13px">Heart Rate</button>
+    <button type="button" id="tabFTP" onclick="switchTab('ftp')" style="flex:1;background:#3d5220;color:#f0f5e8;border:none;padding:8px;border-radius:6px;cursor:pointer;font-size:13px">Power (FTP)</button>
+    <button type="button" id="tabHR" onclick="switchTab('hr')" style="flex:1;background:#5c7a35;color:#c5d9a0;border:none;padding:8px;border-radius:6px;cursor:pointer;font-size:13px">Heart Rate</button>
 </div>
 
 <div id="ftpSection">
@@ -25,18 +27,18 @@
     <input type="number" id="ftp" placeholder="e.g. 250">
     <div class="collapsible">What is FTP? ⬇</div>
     <div class="content">
-        <p>FTP = max 1-hour power. Use ~95% of 20-min effort.</p>
+        <p>Your maximum power output you can hold for one hour. Use about 95% of your best 20-minute power as a rough guide.</p>
     </div>
     <label>Target IF</label>
     <input type="number" id="targetIF" value="0.85" step="0.01">
     <div class="collapsible">What is IF? ⬇</div>
     <div class="content">
-        <p>IF = effort vs FTP. 0.85 = 85% FTP.</p>
+        <p>How hard you plan to ride as a percentage of your FTP. 0.85 means 85% of your max — a solid race effort for most people.</p>
     </div>
 </div>
 
 <div id="hrSection" style="display:none">
-    <p style="font-size:12px;color:#6b7280;margin:0 0 8px">Enter the upper limit of each heart rate zone (bpm)</p>
+    <p style="font-size:14px;color:#c5d9a0;margin:0 0 8px">Enter the upper limit of each heart rate zone (bpm)</p>
     <label>Zone 1 — Easy (up to)</label>
     <input type="number" id="hrZ1" placeholder="e.g. 115 bpm">
     <label>Zone 2 — Moderate (up to)</label>
@@ -47,46 +49,56 @@
     <input type="number" id="hrZ4" placeholder="e.g. 175 bpm">
     <div class="collapsible">What are HR zones? ⬇</div>
     <div class="content">
-        <p>Zones are effort levels based on heart rate. Zone 1 = very easy, Zone 4 = very hard. Stay in Zone 2–3 for most of a long race.</p>
+        <p>Heart rate zones are effort levels. Zone 1 is very easy, Zone 4 is very hard. For a long race, try to stay in Zone 2–3 for most of it.</p>
     </div>
 </div>
 
+<!-- GPX upload — big drag/drop area -->
+<label>Upload GPX</label>
+<div class="gpx-drop" id="gpxDrop">
+    <div style="font-size:22px;margin-bottom:6px">📂</div>
+    <div style="font-size:14px;color:#c5d9a0;margin-bottom:6px">Drag & drop your GPX file here</div>
+    <div style="font-size:12px;color:#7a9a4a;margin-bottom:10px">or click to browse</div>
+    <input type="file" id="gpxFile" accept=".gpx" style="display:none">
+    <button type="button" onclick="document.getElementById('gpxFile').click()" style="width:auto;padding:8px 20px;margin:0;font-size:13px">Browse files</button>
+    <div id="gpxFileName" style="margin-top:8px;font-size:13px;color:#c5d9a0"></div>
+</div>
 
-<div style="border-top:1px solid #e5e7eb;margin-top:16px;padding-top:12px">
-<p style="font-size:13px;color:#6b7280;margin:0 0 8px">&#x1F4A8; My Wind Sock</p>
+<!-- Wind Sock — directly under GPX -->
+<div style="border-top:1px solid #3d5220;margin-top:16px;padding-top:12px">
+<p style="font-size:14px;color:#c5d9a0;font-weight:bold;margin:0 0 8px">💨 My Wind Sock</p>
 <label>Race date</label>
 <input type="date" id="raceDate">
 <label>Race start time</label>
 <input type="time" id="raceTime" value="08:00">
-<button type="button" onclick="fetchWind()" style="background:#0ea5e9;margin-bottom:8px">&#x1F4E1; Auto-fetch wind from GPX</button>
-<div id="windStatus" style="font-size:12px;color:#6b7280;margin-bottom:6px"></div>
+<button type="button" onclick="fetchWind()" style="background:#2e3d18;margin-bottom:8px">📡 Auto-fetch wind from GPX</button>
+<div id="windStatus" style="font-size:13px;color:#c5d9a0;margin-bottom:6px"></div>
 <label>Wind speed (km/h)</label>
 <input type="number" id="windSpeed" placeholder="e.g. 20" step="1" min="0">
 <label>Wind direction</label>
-<select id="windDir" style="width:100%;padding:6px;margin-top:4px;border:1px solid #ccc;border-radius:4px">
+<select id="windDir">
     <option value="headwind">Headwind (into you)</option>
     <option value="tailwind">Tailwind (behind you)</option>
     <option value="crosswind">Crosswind (side)</option>
 </select>
 </div>
 
-<label>Upload GPX</label>
-<input type="file" id="gpxFile">
-
-<div style="border-top:1px solid #e5e7eb;margin-top:16px;padding-top:12px">
-<p style="font-size:13px;color:#c5d9a0;margin:0 0 8px">&#x1F6B4; Rider</p>
+<!-- Rider -->
+<div style="border-top:1px solid #3d5220;margin-top:16px;padding-top:12px">
+<p style="font-size:14px;color:#c5d9a0;font-weight:bold;margin:0 0 8px">🚴 Rider</p>
 <label>Body weight (kg)</label>
 <input type="number" id="riderWeight" placeholder="e.g. 75" step="1" min="30" max="200">
 <label>Target avg speed (km/h)</label>
 <input type="number" id="targetSpeed" placeholder="e.g. 28" step="0.5" min="10" max="60">
 <div class="collapsible">What does this do? ⬇</div>
 <div class="content">
-<p>Enter your goal average speed and the plan will adjust effort targets for each segment to hit that pace — pushing harder on climbs and easing off on descents.</p>
+<p>Enter your goal average speed and the plan will adjust your effort targets for each segment to hit that pace.</p>
 </div>
 </div>
 
-<div style="border-top:1px solid #e5e7eb;margin-top:16px;padding-top:12px">
-<p style="font-size:13px;color:#6b7280;margin:0 0 8px">&#x1F4C5; Previous year's race (optional)</p>
+<!-- Previous year -->
+<div style="border-top:1px solid #3d5220;margin-top:16px;padding-top:12px">
+<p style="font-size:14px;color:#c5d9a0;font-weight:bold;margin:0 0 8px">📅 Previous year's race (optional)</p>
 <label>Finish time (e.g. 3:45)</label>
 <input type="text" id="prevTime" placeholder="h:mm or hh:mm">
 <label>Avg speed (km/h)</label>
@@ -102,7 +114,7 @@
 <div class="card" style="margin-top:20px">
 <canvas id="chart2"></canvas>
 </div>
-<div class="card">
+<div class="card" style="margin-top:20px">
 <h3>Segments</h3>
 <div id="segments"></div>
 </div>
