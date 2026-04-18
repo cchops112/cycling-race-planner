@@ -6,159 +6,104 @@
 <title>Route Planner — Race Calc Pro</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-    font-family: Arial, sans-serif;
-    background: #4a5c2f;
-    color: #f0f5e8;
-    min-height: 100vh;
-}
+body { font-family: Arial, sans-serif; background: #4a5c2f; color: #f0f5e8; height: 100vh; display: flex; flex-direction: column; }
 header {
     background: #3d5220;
-    padding: 14px 20px;
+    padding: 12px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 2px solid #2e3d18;
+    flex-shrink: 0;
 }
-header h1 { font-size: 20px; color: #f0f5e8; }
+header h1 { font-size: 18px; color: #f0f5e8; }
 header a {
-    color: #c5d9a0;
-    text-decoration: none;
-    font-size: 13px;
-    background: #4a5c2f;
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid #5c7a35;
+    color: #c5d9a0; text-decoration: none; font-size: 13px;
+    background: #4a5c2f; padding: 6px 12px; border-radius: 6px; border: 1px solid #5c7a35;
 }
 header a:hover { background: #5c7a35; }
-.layout {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    height: calc(100vh - 54px);
+.main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
 }
 .sidebar {
+    width: 260px;
     background: #3d5220;
-    padding: 16px;
+    padding: 14px;
     overflow-y: auto;
     border-right: 2px solid #2e3d18;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
+    flex-shrink: 0;
 }
-.sidebar h2 { font-size: 15px; color: #c5d9a0; margin-bottom: 4px; }
-.info-box {
-    background: #4a5c2f;
-    border-radius: 8px;
-    padding: 12px;
-    font-size: 13px;
-    color: #c5d9a0;
-    line-height: 1.6;
-}
-.stat { display: flex; justify-content: space-between; margin: 4px 0; }
+.sidebar h2 { font-size: 13px; color: #c5d9a0; text-transform: uppercase; letter-spacing: 0.5px; }
+.info-box { background: #4a5c2f; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.stat { display: flex; justify-content: space-between; margin: 3px 0; color: #c5d9a0; }
 .stat span:last-child { font-weight: bold; color: #f0f5e8; }
-.search-box {
-    display: flex;
-    gap: 6px;
+.search-row { display: flex; gap: 6px; }
+.search-row input {
+    flex: 1; padding: 7px 8px; border-radius: 6px;
+    border: 1px solid #5c7a35; background: #4a5c2f; color: #f0f5e8; font-size: 13px;
 }
-.search-box input {
-    flex: 1;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #5c7a35;
-    background: #4a5c2f;
-    color: #f0f5e8;
-    font-size: 13px;
+.search-row input::placeholder { color: #7a9a4a; }
+.search-row button {
+    padding: 7px 10px; background: #5c7a35; border: none;
+    border-radius: 6px; color: #f0f5e8; cursor: pointer; font-size: 13px;
 }
-.search-box input::placeholder { color: #7a9a4a; }
-.search-box button {
-    padding: 8px 12px;
-    background: #5c7a35;
-    border: none;
-    border-radius: 6px;
-    color: #f0f5e8;
-    cursor: pointer;
-    font-size: 13px;
-}
-.search-box button:hover { background: #7a9a4a; }
-btn-row {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-button.action {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    font-weight: bold;
-}
-button.green  { background: #5c7a35; color: #f0f5e8; }
-button.green:hover { background: #7a9a4a; }
-button.dark   { background: #2e3d18; color: #c5d9a0; }
-button.dark:hover { background: #1f2910; }
-button.red    { background: #7a2a2a; color: #f5c5c5; }
-button.red:hover { background: #5c1e1e; }
-.waypoint-list {
-    max-height: 200px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.waypoint-item {
-    background: #4a5c2f;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 12px;
-    color: #c5d9a0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.waypoint-item span { color: #f0f5e8; font-size: 11px; }
-.waypoint-item button {
-    background: none;
-    border: none;
-    color: #ef4444;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 0 4px;
-    width: auto;
-    margin: 0;
-}
-#map { width: 100%; height: 100%; }
+.search-row button:hover { background: #7a9a4a; }
+.btn { width: 100%; padding: 9px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; margin-top: 2px; }
+.btn-green { background: #5c7a35; color: #f0f5e8; }
+.btn-green:hover { background: #7a9a4a; }
+.btn-dark { background: #2e3d18; color: #c5d9a0; }
+.btn-dark:hover { background: #1f2910; }
+.btn-red { background: #7a2a2a; color: #f5c5c5; }
+.btn-red:hover { background: #5c1e1e; }
 .tip {
-    background: #2e3d18;
-    border-left: 3px solid #7a9a4a;
-    border-radius: 0 6px 6px 0;
-    padding: 8px 10px;
-    font-size: 12px;
-    color: #c5d9a0;
-    line-height: 1.5;
+    background: #2e3d18; border-left: 3px solid #7a9a4a;
+    border-radius: 0 6px 6px 0; padding: 8px 10px;
+    font-size: 12px; color: #c5d9a0; line-height: 1.5;
 }
-#status {
-    font-size: 12px;
-    color: #7a9a4a;
-    min-height: 16px;
+#status { font-size: 12px; color: #7a9a4a; min-height: 14px; }
+.wp-list { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.wp-item {
+    background: #4a5c2f; border-radius: 5px; padding: 5px 8px;
+    font-size: 12px; color: #c5d9a0; display: flex; justify-content: space-between; align-items: center;
 }
+.wp-item .wp-num { color: #f0f5e8; font-weight: bold; margin-right: 6px; }
+.wp-item button { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 13px; padding: 0 2px; }
+.right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#map { flex: 1; min-height: 0; }
+.elev-panel {
+    height: 160px;
+    background: #3d5220;
+    border-top: 2px solid #2e3d18;
+    padding: 8px 12px 4px;
+    flex-shrink: 0;
+}
+.elev-panel h3 { font-size: 12px; color: #c5d9a0; margin-bottom: 4px; }
+.loading { font-size: 12px; color: #7a9a4a; padding: 4px; }
 </style>
 </head>
 <body>
-
 <header>
     <h1>🗺️ Route Planner</h1>
     <a href="index.html">← Back to Race Calc Pro</a>
 </header>
-
-<div class="layout">
+<div class="main">
     <div class="sidebar">
         <div>
-            <h2>Search location</h2>
-            <div class="search-box">
+            <h2>Search</h2>
+            <div class="search-row">
                 <input type="text" id="searchInput" placeholder="e.g. Adelaide, SA" onkeydown="if(event.key==='Enter') searchLocation()">
                 <button onclick="searchLocation()">Go</button>
             </div>
@@ -166,148 +111,285 @@ button.red:hover { background: #5c1e1e; }
         </div>
 
         <div class="tip">
-            📍 <strong>Click on the map</strong> to add waypoints. Each click adds a point and draws the route between them.
+            📍 <strong>Click the map</strong> to add waypoints — the route snaps to roads automatically.<br><br>
+            🔵 <strong>Drag any waypoint</strong> to move it.
         </div>
 
         <div>
             <h2>Route stats</h2>
             <div class="info-box">
-                <div class="stat"><span>Points</span><span id="statPoints">0</span></div>
+                <div class="stat"><span>Waypoints</span><span id="statPts">0</span></div>
                 <div class="stat"><span>Distance</span><span id="statDist">0.0 km</span></div>
-                <div class="stat"><span>Elevation gain</span><span id="statElev">— m</span></div>
+                <div class="stat"><span>Elev gain</span><span id="statGain">— m</span></div>
+                <div class="stat"><span>Elev loss</span><span id="statLoss">— m</span></div>
             </div>
         </div>
 
         <div>
             <h2>Waypoints</h2>
-            <div class="waypoint-list" id="waypointList"></div>
+            <div class="wp-list" id="wpList"></div>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:8px">
-            <button class="action green" onclick="exportGPX()">⬇️ Export as GPX</button>
-            <button class="action dark" onclick="undoLast()">↩️ Undo last point</button>
-            <button class="action red" onclick="clearRoute()">🗑️ Clear route</button>
+        <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn btn-green" onclick="exportGPX()">⬇️ Export GPX</button>
+            <button class="btn btn-dark" onclick="undoLast()">↩️ Undo last</button>
+            <button class="btn btn-red" onclick="clearAll()">🗑️ Clear route</button>
         </div>
 
-        <div class="tip">
-            After exporting, upload the GPX file in <strong>Race Calc Pro</strong> to generate your pacing plan!
-        </div>
+        <div class="tip">After exporting, upload the GPX in <strong>Race Calc Pro</strong> to generate your pacing plan!</div>
     </div>
 
-    <div id="map"></div>
+    <div class="right-panel">
+        <div id="map"></div>
+        <div class="elev-panel">
+            <h3>Elevation profile</h3>
+            <canvas id="elevChart"></canvas>
+        </div>
+    </div>
 </div>
 
 <script>
-// init map
-const map = L.map('map').setView([-34.9285, 138.6007], 10);
+// ── Map setup ──
+const map = L.map('map').setView([-34.9285, 138.6007], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 19
+    attribution: '© OpenStreetMap contributors', maxZoom: 19
 }).addTo(map);
 
-let waypoints = [];
-let markers   = [];
-let polyline  = null;
+let waypoints = []; // { lat, lng, marker }
+let routeSegments = []; // polylines between consecutive waypoints
+let routeCoords = []; // full routed coordinate array for GPX + elevation
+let elevChart = null;
 
-// click to add waypoint
-map.on('click', function(e){
-    addWaypoint(e.latlng.lat, e.latlng.lng);
+// ── Click to add waypoint ──
+map.on('click', async function(e){
+    await addWaypoint(e.latlng.lat, e.latlng.lng);
 });
 
-function addWaypoint(lat, lng){
-    waypoints.push({ lat, lng });
-
-    let num = waypoints.length;
-    let icon = L.divIcon({
-        html: `<div style="background:#3d5220;color:#f0f5e8;border:2px solid #c5d9a0;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold">${num}</div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-        className: ''
-    });
-    let marker = L.marker([lat, lng], { icon }).addTo(map);
-    markers.push(marker);
-
-    drawRoute();
+async function addWaypoint(lat, lng){
+    let idx = waypoints.length;
+    let marker = makeMarker(lat, lng, idx + 1);
+    waypoints.push({ lat, lng, marker });
+    updateWPList();
     updateStats();
-    updateWaypointList();
-}
 
-function drawRoute(){
-    if(polyline) map.removeLayer(polyline);
-    if(waypoints.length < 2) return;
-    let latlngs = waypoints.map(w => [w.lat, w.lng]);
-    polyline = L.polyline(latlngs, {
-        color: '#ef4444',
-        weight: 4,
-        opacity: 0.85
-    }).addTo(map);
-}
-
-function updateStats(){
-    document.getElementById('statPoints').textContent = waypoints.length;
-    let totalDist = 0;
-    for(let i=1; i<waypoints.length; i++){
-        totalDist += haversine(waypoints[i-1].lat, waypoints[i-1].lng, waypoints[i].lat, waypoints[i].lng);
+    if(waypoints.length >= 2){
+        await routeSegment(waypoints.length - 2, waypoints.length - 1);
+        await fetchElevationAndDraw();
     }
-    document.getElementById('statDist').textContent = (totalDist/1000).toFixed(2) + ' km';
 }
 
-function updateWaypointList(){
-    let list = document.getElementById('waypointList');
-    list.innerHTML = waypoints.map((w,i) => `
-        <div class="waypoint-item">
-            <span style="color:#c5d9a0">Point ${i+1}</span>
-            <span>${w.lat.toFixed(4)}, ${w.lng.toFixed(4)}</span>
-            <button onclick="removeWaypoint(${i})">✕</button>
-        </div>
-    `).join('');
-}
-
-function removeWaypoint(index){
-    waypoints.splice(index, 1);
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
-    waypoints.forEach((w,i) => {
-        let icon = L.divIcon({
-            html: `<div style="background:#3d5220;color:#f0f5e8;border:2px solid #c5d9a0;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold">${i+1}</div>`,
-            iconSize:[24,24], iconAnchor:[12,12], className:''
-        });
-        markers.push(L.marker([w.lat, w.lng], { icon }).addTo(map));
+function makeMarker(lat, lng, num){
+    let icon = L.divIcon({
+        html: `<div style="background:#3d5220;color:#f0f5e8;border:2px solid #c5d9a0;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;cursor:grab">${num}</div>`,
+        iconSize: [26, 26], iconAnchor: [13, 13], className: ''
     });
-    drawRoute();
-    updateStats();
-    updateWaypointList();
+    let marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+
+    // drag to move waypoint
+    marker.on('dragend', async function(){
+        let pos = marker.getLatLng();
+        let idx = waypoints.findIndex(w => w.marker === marker);
+        if(idx === -1) return;
+        waypoints[idx].lat = pos.lat;
+        waypoints[idx].lng = pos.lng;
+        await rerouteAround(idx);
+        await fetchElevationAndDraw();
+        updateStats();
+    });
+
+    return marker;
 }
 
+// ── Route a segment between two waypoint indices using OSRM ──
+async function routeSegment(fromIdx, toIdx){
+    let a = waypoints[fromIdx], b = waypoints[toIdx];
+    let key = `seg_${fromIdx}_${toIdx}`;
+
+    // remove old segment polyline if exists
+    if(routeSegments[fromIdx]){
+        map.removeLayer(routeSegments[fromIdx]);
+        routeSegments[fromIdx] = null;
+    }
+
+    try {
+        let url = `https://router.project-osrm.org/route/v1/cycling/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
+        let res = await fetch(url);
+        let data = await res.json();
+        if(data.code !== 'Ok') throw new Error('No route');
+        let coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+        let poly = L.polyline(coords, { color: '#ef4444', weight: 4, opacity: 0.85 }).addTo(map);
+        routeSegments[fromIdx] = poly;
+    } catch(e){
+        // fallback to straight line
+        let poly = L.polyline([[a.lat, a.lng],[b.lat, b.lng]], { color: '#ef4444', weight: 3, opacity: 0.6, dashArray: '6,4' }).addTo(map);
+        routeSegments[fromIdx] = poly;
+    }
+    buildRouteCoords();
+}
+
+// ── Re-route segments around a moved waypoint ──
+async function rerouteAround(idx){
+    let tasks = [];
+    if(idx > 0) tasks.push(routeSegment(idx - 1, idx));
+    if(idx < waypoints.length - 1) tasks.push(routeSegment(idx, idx + 1));
+    await Promise.all(tasks);
+    buildRouteCoords();
+}
+
+// ── Build full route coordinate array from segment polylines ──
+function buildRouteCoords(){
+    routeCoords = [];
+    for(let i = 0; i < routeSegments.length; i++){
+        if(!routeSegments[i]) continue;
+        let latlngs = routeSegments[i].getLatLngs();
+        if(i === 0) routeCoords.push(...latlngs);
+        else routeCoords.push(...latlngs.slice(1));
+    }
+}
+
+// ── Fetch elevation from Open-Elevation for route coords ──
+async function fetchElevationAndDraw(){
+    if(routeCoords.length < 2){ clearElevChart(); return; }
+
+    // sample max 100 points to stay within API limits
+    let step = Math.max(1, Math.floor(routeCoords.length / 100));
+    let sampled = routeCoords.filter((_, i) => i % step === 0);
+
+    try {
+        let locations = sampled.map(c => ({ latitude: c.lat, longitude: c.lng }));
+        let res = await fetch('https://api.open-elevation.com/api/v1/lookup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ locations })
+        });
+        let data = await res.json();
+        let elevs = data.results.map(r => r.elevation);
+
+        // calc cumulative distance for x axis
+        let dists = [0];
+        for(let i = 1; i < sampled.length; i++){
+            dists.push(dists[i-1] + haversine(sampled[i-1].lat, sampled[i-1].lng, sampled[i].lat, sampled[i].lng) / 1000);
+        }
+
+        // update gain/loss stats
+        let gain = 0, loss = 0;
+        for(let i = 1; i < elevs.length; i++){
+            let d = elevs[i] - elevs[i-1];
+            if(d > 0) gain += d; else loss += Math.abs(d);
+        }
+        document.getElementById('statGain').textContent = Math.round(gain) + ' m';
+        document.getElementById('statLoss').textContent = Math.round(loss) + ' m';
+
+        drawElevChart(dists, elevs);
+    } catch(e){
+        document.getElementById('statGain').textContent = '—';
+        document.getElementById('statLoss').textContent = '—';
+    }
+}
+
+function drawElevChart(dists, elevs){
+    let canvas = document.getElementById('elevChart');
+    if(elevChart) elevChart.destroy();
+    elevChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: dists.map(d => d.toFixed(1)),
+            datasets:[{
+                data: elevs,
+                borderColor: '#c5d9a0',
+                backgroundColor: 'rgba(197,217,160,0.2)',
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options:{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins:{ legend:{ display:false } },
+            scales:{
+                x:{
+                    ticks:{ color:'#c5d9a0', maxTicksLimit:10, callback: v => v + ' km' },
+                    grid:{ color:'rgba(197,217,160,0.1)' },
+                    title:{ display:true, text:'Distance (km)', color:'#c5d9a0', font:{ size:11 } }
+                },
+                y:{
+                    ticks:{ color:'#c5d9a0' },
+                    grid:{ color:'rgba(197,217,160,0.1)' },
+                    title:{ display:true, text:'Elevation (m)', color:'#c5d9a0', font:{ size:11 } }
+                }
+            }
+        }
+    });
+}
+
+function clearElevChart(){
+    if(elevChart){ elevChart.destroy(); elevChart = null; }
+    document.getElementById('statGain').textContent = '— m';
+    document.getElementById('statLoss').textContent = '— m';
+}
+
+// ── Undo / Clear ──
 function undoLast(){
     if(!waypoints.length) return;
-    waypoints.pop();
-    let last = markers.pop();
-    map.removeLayer(last);
-    drawRoute();
+    let last = waypoints.pop();
+    map.removeLayer(last.marker);
+    let segIdx = waypoints.length;
+    if(routeSegments[segIdx]){ map.removeLayer(routeSegments[segIdx]); routeSegments[segIdx] = null; }
+    buildRouteCoords();
+    updateWPList();
     updateStats();
-    updateWaypointList();
+    fetchElevationAndDraw();
 }
 
-function clearRoute(){
+function clearAll(){
     if(!confirm('Clear the whole route?')) return;
-    waypoints = [];
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
-    if(polyline) map.removeLayer(polyline);
-    polyline = null;
+    waypoints.forEach(w => map.removeLayer(w.marker));
+    routeSegments.forEach(s => { if(s) map.removeLayer(s); });
+    waypoints = []; routeSegments = []; routeCoords = [];
+    clearElevChart();
+    updateWPList();
     updateStats();
-    updateWaypointList();
 }
 
-function haversine(lat1, lon1, lat2, lon2){
-    const R = 6371000;
-    const toRad = x => x * Math.PI/180;
-    let dLat = toRad(lat2-lat1), dLon = toRad(lon2-lon1);
-    let a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
-    return 2*R*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+// ── Stats + waypoint list ──
+function updateStats(){
+    document.getElementById('statPts').textContent = waypoints.length;
+    let total = 0;
+    for(let i=1;i<waypoints.length;i++)
+        total += haversine(waypoints[i-1].lat, waypoints[i-1].lng, waypoints[i].lat, waypoints[i].lng);
+    document.getElementById('statDist').textContent = (total/1000).toFixed(2) + ' km';
 }
 
+function updateWPList(){
+    document.getElementById('wpList').innerHTML = waypoints.map((w,i) => `
+        <div class="wp-item">
+            <span><span class="wp-num">${i+1}</span>${w.lat.toFixed(4)}, ${w.lng.toFixed(4)}</span>
+            <button onclick="removeWP(${i})">✕</button>
+        </div>`).join('');
+}
+
+async function removeWP(idx){
+    map.removeLayer(waypoints[idx].marker);
+    if(routeSegments[idx]){ map.removeLayer(routeSegments[idx]); routeSegments.splice(idx,1); }
+    else if(idx > 0 && routeSegments[idx-1]){ map.removeLayer(routeSegments[idx-1]); routeSegments.splice(idx-1,1); }
+    waypoints.splice(idx, 1);
+    // renumber markers
+    waypoints.forEach((w,i) => {
+        map.removeLayer(w.marker);
+        w.marker = makeMarker(w.lat, w.lng, i+1);
+    });
+    // reroute remaining
+    routeSegments = [];
+    for(let i=0;i<waypoints.length-1;i++) await routeSegment(i,i+1);
+    buildRouteCoords();
+    updateWPList();
+    updateStats();
+    fetchElevationAndDraw();
+}
+
+// ── Search ──
 async function searchLocation(){
     let q = document.getElementById('searchInput').value.trim();
     let status = document.getElementById('status');
@@ -316,44 +398,30 @@ async function searchLocation(){
     try {
         let res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`);
         let data = await res.json();
-        if(!data.length){ status.textContent = '⚠️ Location not found.'; return; }
-        let { lat, lon, display_name } = data[0];
-        map.setView([+lat, +lon], 13);
-        status.textContent = '✅ ' + display_name.split(',').slice(0,2).join(',');
-    } catch(e){
-        status.textContent = '⚠️ Search failed.';
-    }
+        if(!data.length){ status.textContent = '⚠️ Not found.'; return; }
+        map.setView([+data[0].lat, +data[0].lon], 14);
+        status.textContent = '✅ ' + data[0].display_name.split(',').slice(0,2).join(',');
+    } catch(e){ status.textContent = '⚠️ Search failed.'; }
 }
 
+// ── Export GPX ──
 function exportGPX(){
-    if(waypoints.length < 2){
-        alert('Add at least 2 points before exporting.');
-        return;
-    }
+    if(waypoints.length < 2){ alert('Add at least 2 points first.'); return; }
+    let pts = routeCoords.length > 0 ? routeCoords : waypoints.map(w => ({ lat: w.lat, lng: w.lng }));
     let date = new Date().toISOString();
-    let trkpts = waypoints.map(w =>
-        `    <trkpt lat="${w.lat.toFixed(6)}" lon="${w.lng.toFixed(6)}">
-      <ele>0</ele>
-      <time>${date}</time>
-    </trkpt>`
-    ).join('\n');
-
-    let gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Race Calc Pro Route Planner"
-  xmlns="http://www.topografix.com/GPX/1/1">
-  <trk>
-    <name>My Route</name>
-    <trkseg>
-${trkpts}
-    </trkseg>
-  </trk>
-</gpx>`;
-
-    let blob = new Blob([gpx], { type: 'application/gpx+xml' });
+    let trkpts = pts.map(c => `    <trkpt lat="${c.lat.toFixed(6)}" lon="${c.lng.toFixed(6)}"><ele>0</ele><time>${date}</time></trkpt>`).join('\n');
+    let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Race Calc Pro">\n  <trk><name>My Route</name><trkseg>\n${trkpts}\n  </trkseg></trk>\n</gpx>`;
     let a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(new Blob([gpx], { type: 'application/gpx+xml' }));
     a.download = 'my-route.gpx';
     a.click();
+}
+
+// ── Haversine ──
+function haversine(lat1,lon1,lat2,lon2){
+    const R=6371000, toRad=x=>x*Math.PI/180;
+    let a=Math.sin(toRad(lat2-lat1)/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(toRad(lon2-lon1)/2)**2;
+    return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 </script>
 </body>
