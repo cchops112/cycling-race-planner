@@ -31,6 +31,15 @@
 </div>
 <label>Upload GPX</label>
 <input type="file" id="gpxFile">
+
+<div style="border-top:1px solid #e5e7eb;margin-top:16px;padding-top:12px">
+<p style="font-size:13px;color:#6b7280;margin:0 0 8px">&#x1F4C5; Previous year's race (optional)</p>
+<label>Finish time (e.g. 3:45)</label>
+<input type="text" id="prevTime" placeholder="h:mm or hh:mm">
+<label>Avg speed (km/h)</label>
+<input type="number" id="prevSpeed" placeholder="e.g. 28.5" step="0.1">
+</div>
+
 <button onclick="runCalc()">Generate Plan</button>
 </div>
 <div class="card">
