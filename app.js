@@ -27,9 +27,9 @@ function optimizePower(grad, ftp, IF){
 }
 
 function getTerrainType(gradPct){
-    if(gradPct < -2)  return "descent";
-    if(gradPct < 2)   return "flat";
-    if(gradPct < 5)   return "easy climb";
+    if(gradPct < 0)   return "descent";
+    if(gradPct < 3)   return "flat";
+    if(gradPct < 6)   return "easy climb";
     if(gradPct < 10)  return "super climb";
     return "hard climb";
 }
