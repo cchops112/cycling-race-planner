@@ -62,7 +62,34 @@ function terrainEmoji(type){
     }[type] || "";
 }
 
-async function fetchWind(){
+// tab switching between FTP and HR
+function switchTab(tab){
+    let isFTP = tab === 'ftp';
+    document.getElementById('ftpSection').style.display = isFTP ? 'block' : 'none';
+    document.getElementById('hrSection').style.display  = isFTP ? 'none' : 'block';
+    document.getElementById('tabFTP').style.background = isFTP ? '#0077cc' : '#e5e7eb';
+    document.getElementById('tabFTP').style.color      = isFTP ? 'white' : '#374151';
+    document.getElementById('tabHR').style.background  = isFTP ? '#e5e7eb' : '#0077cc';
+    document.getElementById('tabHR').style.color       = isFTP ? '#374151' : 'white';
+}
+
+// convert HR zone targets to equivalent effort level (0–1 scale like IF)
+function hrZoneToIF(hrZ1, hrZ2, hrZ3, hrZ4, targetZone){
+    // map zone to IF equivalent: Z1=0.55, Z2=0.70, Z3=0.85, Z4=0.95
+    let zoneIF = { 1: 0.55, 2: 0.70, 3: 0.85, 4: 0.95 };
+    return zoneIF[targetZone] || 0.75;
+}
+
+// get HR zone label from bpm
+function getHRZone(bpm, z1, z2, z3, z4){
+    if(bpm <= z1) return { zone: 1, label: "Zone 1 — Easy",      color: "#3b82f6" };
+    if(bpm <= z2) return { zone: 2, label: "Zone 2 — Moderate",  color: "#22c55e" };
+    if(bpm <= z3) return { zone: 3, label: "Zone 3 — Hard",      color: "#f59e0b" };
+    if(bpm <= z4) return { zone: 4, label: "Zone 4 — Very hard", color: "#f97316" };
+    return             { zone: 5, label: "Zone 5 — Max",         color: "#ef4444" };
+}
+
+
     let file = document.getElementById("gpxFile").files[0];
     let status = document.getElementById("windStatus");
     if(!file){
@@ -119,11 +146,35 @@ function degreesToCompass(deg){
 
 function runCalc(){
     let ftp = +document.getElementById("ftp").value;
-    let IF  = +document.getElementById("targetIF").value;
-    let crr = +document.getElementById("crr").value;
+    let IF  = +document.getElementById("targetIF").value || 0.85;
     let windSpeed = +document.getElementById("windSpeed").value || 0;
     let windDir   = document.getElementById("windDir").value;
     let file = document.getElementById("gpxFile").files[0];
+
+    // determine mode: FTP or HR
+    let usingHR = document.getElementById("hrSection").style.display !== "none";
+    let hrZ1 = +document.getElementById("hrZ1").value;
+    let hrZ2 = +document.getElementById("hrZ2").value;
+    let hrZ3 = +document.getElementById("hrZ3").value;
+    let hrZ4 = +document.getElementById("hrZ4").value;
+
+    // validate — need either FTP or all 4 HR zones
+    if(usingHR){
+        if(!hrZ1 || !hrZ2 || !hrZ3 || !hrZ4){
+            alert("Please fill in all 4 heart rate zones.");
+            return;
+        }
+        // derive a pseudo-FTP from HR zones for power calculations
+        // we use Zone 3 effort (0.85 IF equivalent) as the base
+        // and set a notional FTP of 200W as reference (relative effort still works)
+        ftp = 200;
+        IF  = 0.85;
+    } else {
+        if(!ftp){
+            alert("Please enter your FTP, or switch to Heart Rate mode.");
+            return;
+        }
+    }
 
     // parse previous year data if entered
     let prevTimeInput = document.getElementById("prevTime").value.trim();
@@ -313,12 +364,23 @@ function runCalc(){
                 carbIndex++;
             }
 
+            let effortStr = "";
+            if(usingHR){
+                // map avg power % of FTP to a HR zone
+                let pct = seg.avgPower / ftp;
+                let zone = pct > 0.95 ? 4 : pct > 0.85 ? 3 : pct > 0.70 ? 2 : 1;
+                let zoneInfo = getHRZone(zone === 1 ? hrZ1 - 5 : zone === 2 ? hrZ2 - 5 : zone === 3 ? hrZ3 - 5 : hrZ4 - 5, hrZ1, hrZ2, hrZ3, hrZ4);
+                effortStr = `Target: <strong style="color:${zoneInfo.color}">${zoneInfo.label}</strong>`;
+            } else {
+                effortStr = `Avg power: <strong style="color:#111">${Math.round(seg.avgPower)}W</strong>`;
+            }
+
             html += `<div style="border-left:5px solid ${c};padding:10px 14px;margin:6px 0;border-radius:0 8px 8px 0;background:#f9fafb;font-size:15px;">
                 <strong style="color:${c};font-size:16px">${emoji} ${seg.type.toUpperCase()}</strong>
                 <span style="color:#374151;margin-left:8px">${seg.startKm.toFixed(1)} – ${seg.endKm.toFixed(1)} km</span>
                 <span style="color:#6b7280;font-size:13px;display:block;margin-top:4px">
                     Avg grade: <strong style="color:#111">${seg.avgGrad.toFixed(1)}%</strong>
-                    &nbsp;|&nbsp; Avg power: <strong style="color:#111">${Math.round(seg.avgPower)}W</strong>
+                    &nbsp;|&nbsp; ${effortStr}
                     &nbsp;|&nbsp; Est. time: <strong style="color:#111">${mins}m ${secs}s</strong>
                 </span>
             </div>`;
