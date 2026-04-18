@@ -37,19 +37,24 @@ function runCalc(){
     reader.onload = function(e){
         let xml = new DOMParser().parseFromString(e.target.result,"text/xml");
         let pts = xml.getElementsByTagName("trkpt");
-        let dist=[0], elev=[], td=0;
+        let dist=[0], elev=[0], td=0;
+
+        // grab first point elevation safely
+        let firstEle = pts[0] ? pts[0].getElementsByTagName("ele")[0] : null;
+        elev[0] = firstEle ? +firstEle.textContent : 0;
+
         for(let i=1;i<pts.length;i++){
             let p1=pts[i-1], p2=pts[i];
             let d = haversine(
-                p1.getAttribute("lat"),
-                p1.getAttribute("lon"),
-                p2.getAttribute("lat"),
-                p2.getAttribute("lon")
+                +p1.getAttribute("lat"),
+                +p1.getAttribute("lon"),
+                +p2.getAttribute("lat"),
+                +p2.getAttribute("lon")
             );
             td+=d;
             dist.push(td/1000);
             let eleTag = p2.getElementsByTagName("ele")[0];
-elev.push(eleTag ? +eleTag.textContent : 0);
+            elev.push(eleTag ? +eleTag.textContent : elev[elev.length-1]);
         }
         let colors=[], html="";
         for(let i=1;i<elev.length;i++){
