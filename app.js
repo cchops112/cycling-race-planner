@@ -102,7 +102,34 @@ function terrainEmoji(type){
     }[type] || "";
 }
 
-// tab switching between FTP and HR
+// HR zone calculator
+function calcHRZones(){
+    let age   = +document.getElementById("calcAge").value;
+    let maxHR = +document.getElementById("calcMaxHR").value;
+    let status = document.getElementById("calcStatus");
+
+    // if no max HR entered, estimate from age using 220 - age formula
+    if(!maxHR){
+        if(!age){ status.textContent = "⚠️ Enter your age or max HR."; return; }
+        maxHR = 220 - age;
+    }
+
+    // Karvonen-style zones based on % of max HR
+    let z1 = Math.round(maxHR * 0.60);
+    let z2 = Math.round(maxHR * 0.70);
+    let z3 = Math.round(maxHR * 0.80);
+    let z4 = Math.round(maxHR * 0.90);
+
+    document.getElementById("hrZ1").value = z1;
+    document.getElementById("hrZ2").value = z2;
+    document.getElementById("hrZ3").value = z3;
+    document.getElementById("hrZ4").value = z4;
+
+    let source = +document.getElementById("calcMaxHR").value ? "your max HR" : `estimated max HR of ${maxHR} bpm (220 − ${age})`;
+    status.textContent = `✅ Zones filled in based on ${source}`;
+}
+
+
 function switchTab(tab){
     let isFTP = tab === 'ftp';
     document.getElementById('ftpSection').style.display = isFTP ? 'block' : 'none';
